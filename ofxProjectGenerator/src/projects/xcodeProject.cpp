@@ -9,6 +9,7 @@ using std::cout;
 using std::endl;
 using nlohmann::json;
 using nlohmann::json_pointer;
+namespace fs = of::filesystem;
 
 xcodeProject::xcodeProject(string target)
 :baseProject(target){
@@ -62,8 +63,8 @@ xcodeProject::xcodeProject(string target)
 };
 
 bool xcodeProject::createProjectFile(){
-	//	cout << "createProjectFile() xcodeProject " << xcodeProject << endl;
-	of::filesystem::path xcodeProject = projectDir / ( projectName + ".xcodeproj" );
+	fs::path xcodeProject = projectDir / ( projectName + ".xcodeproj" );
+	cout << "createProjectFile() xcodeProject " << xcodeProject << endl;
 
 	if (ofDirectory::doesDirectoryExist(xcodeProject)){
 		ofDirectory::removeDirectory(xcodeProject, true);
@@ -73,12 +74,22 @@ bool xcodeProject::createProjectFile(){
 	xcodeDir.create(true);
 	xcodeDir.close();
 
-	ofFile::copyFromTo(ofFilePath::join(templatePath,"emptyExample.xcodeproj/project.pbxproj"),
-					   ofFilePath::join(xcodeProject, "project.pbxproj"), true, true);
+	cout << "createProjectFile() templatePath " << templatePath << endl;
+	auto from = templatePath / "emptyExample.xcodeproj/project.pbxproj";
+	auto to =  xcodeProject / "project.pbxproj";
+//	cout << "from " << from << endl;
+//	cout << "to " << to << endl;
 
-	findandreplaceInTexfile(ofFilePath::join(xcodeProject, "project.pbxproj"), "emptyExample", projectName);
+	ofFile::copyFromTo( from, to, true, true);
 
-	ofFile::copyFromTo(ofFilePath::join(templatePath,"Project.xcconfig"),projectDir, true, true);
+	findandreplaceInTexfile(to, "emptyExample", projectName);
+
+	from = fs::current_path() / templatePath / "Project.xcconfig";
+	to = projectDir;
+	cout << "from " << from << endl;
+	cout << "to " << to << endl;
+	ofFile::copyFromTo(from, to, true, true);
+	cout << "after copyFromTo "  << endl;
 
 	ofDirectory binDirectory(ofFilePath::join(projectDir, "bin"));
 	if (!binDirectory.exists()){
@@ -128,6 +139,10 @@ bool xcodeProject::createProjectFile(){
 
 	// make everything relative the right way.
 	string relRoot = getOFRelPathFS(projectDir).string();
+	cout << "relRoot = " << relRoot << endl;
+
+	string relRoot2 = getOFRelPathFS(fs::current_path()).string();
+	cout << "relRoot2 = " << relRoot << endl;
 
 	if (relRoot != "../../.."){
 
@@ -718,7 +733,7 @@ void xcodeProject::addAddon(ofAddon & addon){
 }
 
 bool xcodeProject::saveProjectFile(){
-	of::filesystem::path fileName = projectDir / (projectName + ".xcodeproj/project.pbxproj");
+	fs::path fileName = projectDir / (projectName + ".xcodeproj/project.pbxproj");
 
 	// JSON Block - Multiplatform
 	string contents = ofBufferFromFile(fileName).getText();

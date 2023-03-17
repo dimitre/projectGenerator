@@ -26,12 +26,13 @@ constexpr option::Descriptor usage[] =
 #include "androidStudioProject.h"
 #include "Utils.h"
 
-
 #define EXIT_OK 0
 #define EXIT_USAGE 64
 #define EXIT_DATAERR 65
 
 #define STRINGIFY(A)  #A
+
+namespace fs = of::filesystem;
 
 //-----------------------------------------------------
 enum pgMode {
@@ -46,13 +47,15 @@ int                 nProjectsUpdated;
 int                 nProjectsCreated;
 
 std::string              directoryForRecursion;
-std::string              projectPath;
-std::string              ofPath;
+
+fs::path projectPath;
+fs::path projectAbsPath;
+fs::path ofPath;
+fs::path current;
 std::vector <std::string>     addons;
 std::vector <std::string>     srcPaths;
 std::vector <ofTargetPlatform>        targets;
 std::string              ofPathEnv;
-std::string              currentWorkingDirectory;
 std::string              templateName;
 
 bool busingEnvVar;
@@ -182,58 +185,53 @@ void addPlatforms(std::string value) {
 }
 
 
-bool isGoodProjectPath(std::string path) {
-
-    ofDirectory dir(path);
-    if (!dir.isDirectory()) {
-        return false;
-    }
-
-    dir.listDir();
-    bool bHasSrc = false;
-    for (size_t i = 0; i < dir.size(); i++) {
-        if (dir.getName(i) == "src") {
-            bHasSrc = true;
-        }
-    }
-
-    if (bHasSrc == true) {
-        return true;
-    }
-    else {
-        return false;
-    }
+bool isGoodProjectPath(const fs::path & path) {
+	if (!fs::is_directory(path)) {
+		ofLogError() << "Project path is not a directory : " << path;
+		return false;
+	}
+	
+	if (!fs::exists(path)) {
+		ofLogError() << "Project path non existent : " << path;
+		return false;
+	}
+	
+	for (auto & f : fs::directory_iterator { path }) {
+		if (f.path().filename().string() == "src") {
+			return true;
+			break;
+		}
+	}
+	
+	ofLogError() << "Project path seems wrong... no scripts / templates directory : " << path;
+	return false;
 }
 
-bool isGoodOFPath(std::string path) {
+bool isGoodOFPath(const fs::path & path) {
+	if (!fs::is_directory(path)) {
+		ofLogError() << "OF path is not a directory : " << path;
+		return false;
+	}
+	
+	if (!fs::exists(path)) {
+		ofLogError() << "OF path non existent : " << path;
+		return false;
+	}
+	
+	for (auto & f : fs::directory_iterator { path }) {
+		if (f.path().filename().string() == "scripts") {
+			return true;
+			break;
+		}
+	}
 
-    ofDirectory dir(path);
-    if (!dir.isDirectory()) {
-        ofLogError() << "ofPath seems wrong... not a directory";
-        return false;
-    }
-
-    dir.listDir();
-    bool bHasTemplates = false;
-    for (size_t i = 0; i < dir.size(); i++) {
-        if (dir.getName(i) == "scripts") {
-            bHasTemplates = true;
-        }
-    }
-
-    if (bHasTemplates == true) {
-        return true;
-    }
-    else {
-        ofLogError() << "ofPath seems wrong... no scripts / templates directory";
-        return false;
-    }
-
+	ofLogError() << "OF path seems wrong... no scripts / templates directory : " << path;
+	return false;
 }
 
 
 
-void updateProject(std::string path, ofTargetPlatform target, bool bConsiderParameterAddons = true) {
+void updateProject(const fs::path & path, ofTargetPlatform target, bool bConsiderParameterAddons = true) {
 
     // bConsiderParameterAddons = do we consider that the user could call update with a new set of addons
     // either we read the addons.make file, or we look at the parameter list.
@@ -242,8 +240,13 @@ void updateProject(std::string path, ofTargetPlatform target, bool bConsiderPara
 
     ofLogNotice() << "updating project " << path;
     auto project = getTargetProject(target);
+	ofLogNotice() << "getTargetProject project " << path;
+
+//	cout << "project " << project << endl;
 
     if (!bDryRun) project->create(path, templateName);
+
+	ofLogNotice() << "after create 1 updating project " << path;
 
     if(bConsiderParameterAddons && bAddonsPassedIn){
         for(auto & addon: addons){
@@ -253,18 +256,21 @@ void updateProject(std::string path, ofTargetPlatform target, bool bConsiderPara
         ofLogNotice() << "parsing addons.make";
         project->parseAddons();
     }
-    
+	ofLogNotice() << "2 updating project " << path;
+
     if(!bDryRun){
         for(auto & srcPath : srcPaths){
             project->addSrcRecursively(srcPath);
         }
     }
 
+	ofLogNotice() << "3 updating project " << path;
+
     if (!bDryRun) project->save();
 }
 
 
-void recursiveUpdate(std::string path, ofTargetPlatform target) {
+void recursiveUpdate(const fs::path & path, ofTargetPlatform target) {
     
     ofDirectory dir(path);
     
@@ -458,37 +464,64 @@ int main(int argc, char* argv[]){
         ofPath = ofPathEnv;
     }
     
- 	currentWorkingDirectory = of::filesystem::current_path().string();
+	if (!projectName.empty()) {
+		cout << "projectName = " << projectName << endl;
+//		current = fs::current_path();
+		projectAbsPath = (fs::current_path() / projectName).lexically_normal();
+		if (!fs::exists(projectAbsPath)) {
+			ofLogError() << "Project path doesn't exist " << projectAbsPath;
+			return EXIT_USAGE;
+		}
+		
+		cout << "current_path = " << fs::current_path() << endl;
+		cout << "projectAbsPath = " << projectAbsPath << endl;
 
-    if (ofPath == "") {
-
+		if (ofFilePath::isAbsolute(projectName)) {
+			projectPath = projectName;
+		} else {
+			projectPath = projectAbsPath;
+//			projectPath = fs::absolute(projectPath);
+		}
+//		fs::current_path(projectAbsPath);
+	} else {
+		ofLogError() << "Missing project path";
+		printHelp();
+		consoleSpace();
+		return EXIT_USAGE;
+	}
+	
+    if (ofPath.empty()) {
         consoleSpace();
         ofLogError() << "no OF path set... please use -o or --ofPath or set a PG_OF_PATH environment variable";
         consoleSpace();
-        
         //------------------------------------ fix me
         //printHelp();
-        
         //return
-		
         return EXIT_USAGE;
     } else {
-
 		// convert ofpath from relative to absolute by appending this to current path and calculating .. by canonical.
-		// FIXME: convert ofPath and functions to of::filesystem::path
-		if (!of::filesystem::path(ofPath).is_absolute()) {
-			ofPath = of::filesystem::canonical(of::filesystem::current_path() / of::filesystem::path(ofPath)).string();
-		}
+		// FIXME: convert ofPath and functions to fs::path
 		
-        
+		using std::cout;
+		using std::endl;
+		cout << "ofPath = " << ofPath << endl;
+		cout << "projectPath = " << projectPath << endl;
+		if (!ofPath.is_absolute()) {
+//			ofPath = fs::relative(fs::current_path(), projectAbsPath);
+//			cout << "ofPath not absolute, calculated like this : " << ofPath << endl;
+//			ofPath = fs::canonical(fs::current_path() / fs::path(ofPath));
+		}
+		cout << "ofPath = " << ofPath << endl;
+		
         if (!isGoodOFPath(ofPath)) {
-			
             return EXIT_USAGE;
         }
-        
-        setOFRoot(ofPath);
-        
-        
+		
+		// the path now is valid in relation to CWD, but not in relation to the project, so we have to change
+//        setOFRoot(ofPath);
+		auto rel = fs::relative(fs::current_path(), projectAbsPath);
+		cout << "REL = " << rel << endl;
+		setOFRoot(rel);
     }
 
     
@@ -504,19 +537,7 @@ int main(int argc, char* argv[]){
         }
     }
     
-    if (projectName != ""){
-        if (ofFilePath::isAbsolute(projectName)) {
-            projectPath = projectName;
-        } else {
-			projectPath = of::filesystem::absolute(projectPath).string();
-		}
-    } else {
-        ofLogError() << "Missing project path";
-        printHelp();
-        consoleSpace();
-		
-        return EXIT_USAGE;
-    }
+
 
 
     if (ofDirectory(projectPath).exists()) {

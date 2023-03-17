@@ -12,17 +12,23 @@
 #include "Utils.h"
 #include "ofConstants.h"
 #include <list>
-using namespace std;
+
+using std::string;
+using std::cout;
+using std::endl;
+namespace fs = of::filesystem;
 
 baseProject::baseProject(string _target){
 	bLoaded = false;
 	target = _target;
 }
 
-const std::string templatesFolder = "scripts/templates/";
+fs::path templatesFolder = "scripts/templates";
 
-std::string baseProject::getPlatformTemplateDir(){
-	return ofFilePath::join(getOFRoot(),templatesFolder + target);
+fs::path baseProject::getPlatformTemplateDir(){
+//	cout << "getPlatformTemplateDir() = " << getOFRoot() / (templatesFolder + target) << endl;
+//	cout << "getPlatformTemplateDir() = " << getOFRoot() / templatesFolder / target << endl;
+	return fs::path(fs::current_path() / getOFRoot() / templatesFolder / target).lexically_normal();
 }
 
 void recursiveTemplateCopy(const ofDirectory & templateDir, ofDirectory & projectDir){
@@ -94,10 +100,10 @@ std::unique_ptr<baseProject::Template> baseProject::parseTemplate(const ofDirect
 	return std::unique_ptr<baseProject::Template>();
 }
 
-vector<baseProject::Template> baseProject::listAvailableTemplates(std::string target){
-	vector<baseProject::Template> templates;
+std::vector<baseProject::Template> baseProject::listAvailableTemplates(std::string target){
+	std::vector<baseProject::Template> templates;
 
-	ofDirectory templatesDir(ofFilePath::join(getOFRoot(),templatesFolder));
+	ofDirectory templatesDir(getOFRoot() / templatesFolder);
 	for(auto & f: templatesDir.getSorted()){
 		if(f.isDirectory()){
 			auto templateConfig = parseTemplate(ofDirectory(f));
@@ -109,42 +115,62 @@ vector<baseProject::Template> baseProject::listAvailableTemplates(std::string ta
 	return templates;
 }
 
-bool baseProject::create(const of::filesystem::path & _path, std::string templateName){
+bool baseProject::create(const fs::path & _path, std::string templateName){
 	templatePath = getPlatformTemplateDir();
 	addons.clear();
 	extSrcPaths.clear();
 	auto path = _path;
+	
+//	cout << "baseProject::create path" << _path << endl;
 
 	if(!ofFilePath::isAbsolute(path)){
-		path = (of::filesystem::current_path() / of::filesystem::path(path)).string();
+		path = (fs::current_path() / fs::path(path)).string();
 	}
 	projectDir = path;
+	
+//	projectDir = fs::current_path();
+//	cout << "path " << path << endl;
+//	cout << "templatePath " << templatePath << endl;
+//	cout << "projectDir " << projectDir << endl;
+//	cout << "current " << fs::current_path() << endl;
+	
+//	auto from = fs::path( fs::current_path() / templatePath / "src" ).lexically_normal();
+//	cout << "from " << from << endl;
+//	auto to = path / "src";
+//	cout << "to : " << to << endl;
 
-	projectName = ofFilePath::getFileName(path);
+//	cout << "baseProject::create projectDir" << projectDir << endl;
+
+	// projectName = ofFilePath::getFileName(path);
+	projectName = path.filename().string();
 	bool bDoesDirExist = false;
-
-	ofDirectory project(ofFilePath::join(projectDir,"src"));    // this is a directory, really?
-	if(project.exists()){
+	
+	if (fs::exists(path / "src")) {
 		bDoesDirExist = true;
-	}else{
-		ofDirectory project(projectDir);
-		ofDirectory(ofFilePath::join(templatePath,"src")).copyTo(ofFilePath::join(projectDir,"src"));
-		ofDirectory(ofFilePath::join(templatePath,"bin")).copyTo(ofFilePath::join(projectDir,"bin"));
+	} else {
+		cout << "copy src folder" << endl;
+		ofDirectory( templatePath / "src" ).copyTo( path / "src" );
+		cout << "copy bin folder" << endl;
+		ofDirectory( templatePath / "bin" ).copyTo( path / "bin" );
 	}
 
 	bool ret = createProjectFile();
+	
 	if(!ret) return false;
 
 	if(templateName!=""){
-		ofDirectory templateDir(ofFilePath::join(getOFRoot(),templatesFolder + templateName));
+		ofDirectory templateDir(getOFRoot() / templatesFolder / templateName);
 		templateDir.setShowHidden(true);
 		auto templateConfig = parseTemplate(templateDir);
 		if(templateConfig){
 			ofDirectory project(projectDir);
+			
 			recursiveTemplateCopy(templateDir,project);
 			for(auto & rename: templateConfig->renames){
 				auto from = (projectDir / rename.first).string();
+				cout << " renames from : " << from << endl;
 				auto to = (projectDir / rename.second).string();
+				cout << " renames to : " << to << endl;
 				ofFile(from).moveTo(to,true,true);
 			}
 		}else{
@@ -158,13 +184,13 @@ bool baseProject::create(const of::filesystem::path & _path, std::string templat
 	parseConfigMake();
 
 	if (bDoesDirExist){
-
-		vector < string > fileNames;
+		// FIXME: path
+		std::vector <string> fileNames;
 		getFilesRecursively(projectDir / "src", fileNames);
 
 		for (auto & f : fileNames) {
-			of::filesystem::path rel { of::filesystem::relative(f, projectDir) };
-			of::filesystem::path folder { rel.parent_path() };
+			fs::path rel { fs::relative(f, projectDir) };
+			fs::path folder { rel.parent_path() };
 
 			std::string fileName = rel.string();
 
@@ -181,9 +207,9 @@ bool baseProject::create(const of::filesystem::path & _path, std::string templat
 		}
 
 		// only add unique paths
-		std::vector < of::filesystem::path > paths;
+		std::vector < fs::path > paths;
 		for (auto & f : fileNames) {
-			auto dir = of::filesystem::path(f).parent_path().filename();
+			auto dir = fs::path(f).parent_path().filename();
 			if (std::find(paths.begin(), paths.end(), dir) == paths.end()) {
 				paths.emplace_back(dir);
 //				cout << "addInclude " << dir << endl;
@@ -196,11 +222,14 @@ bool baseProject::create(const of::filesystem::path & _path, std::string templat
 }
 
 bool baseProject::save(){
+	
+	cout << "OF_ROOT " << getOFRoot() << endl;
+
 	ofLog(OF_LOG_NOTICE) << "saving addons.make";
 	ofFile addonsMake(ofFilePath::join(projectDir,"addons.make"), ofFile::WriteOnly);
 	for(int i = 0; i < addons.size(); i++){
 		if(addons[i].isLocalAddon){
-			addonsMake << of::filesystem::path(addons[i].addonPath).generic_string() << endl;
+			addonsMake << fs::path(addons[i].addonPath).generic_string() << endl;
 		}else{
 			addonsMake << addons[i].name << endl;
 		}
@@ -217,7 +246,9 @@ bool baseProject::save(){
 
 			//add the of root path
 			if( str.rfind("# OF_ROOT =", 0) == 0 ){
-				saveConfig << "OF_ROOT = " + getOFRoot() << endl;
+				saveConfig << "OF_ROOT = " + getOFRoot().string() << endl;
+				
+
 			}
 			// replace this section with our external paths
 			else if( extSrcPaths.size() && str.rfind("# PROJECT_EXTERNAL_SOURCE_PATHS =", 0) == 0 ){
@@ -247,7 +278,7 @@ bool baseProject::isAddonInCache(const std::string & addonPath, const std::strin
 void baseProject::addAddon(std::string addonName){
 	ofAddon addon;
 //	cout << projectDir << endl;
-	addon.pathToOF = getOFRelPath(projectDir.string());
+	addon.pathToOF = getOFRelPathFS(projectDir).string();
 //	cout << addon.pathToOF << endl;
 	addon.pathToProject = ofFilePath::getAbsolutePath(projectDir);
 
@@ -301,11 +332,11 @@ void baseProject::addAddon(std::string addonName){
 
 		for(auto& d : addon.data){
 
-			of::filesystem::path path(ofFilePath::join(addon.addonPath, d));
+			fs::path path(ofFilePath::join(addon.addonPath, d));
 
-			if(of::filesystem::exists(path)){
-				if (of::filesystem::is_regular_file(path)){
-					ofFile src({path});
+			if(fs::exists(path)){
+				if (fs::is_regular_file(path)){
+					ofFile src(path);
 					string dest = ofFilePath::join(projectDir, "bin/data/");
 					ofStringReplace(d, "data/", ""); // avoid to copy files at /data/data/*
 					bool success = src.copyTo(ofFilePath::join(dest, d), false, true);
@@ -314,7 +345,7 @@ void baseProject::addAddon(std::string addonName){
 					}else {
 						ofLogWarning() << "Can not add addon data file: " << d;
 					}
-				}else if(of::filesystem::is_directory(path)){
+				}else if(fs::is_directory(path)){
 					ofDirectory dir({path});
 					string dest = ofFilePath::join(projectDir, "bin/data/");
 					ofStringReplace(d, "data/", ""); // avoid to copy files at /data/data/*
@@ -334,7 +365,8 @@ void baseProject::addAddon(std::string addonName){
 
 void baseProject::addSrcRecursively(std::string srcPath){
 	extSrcPaths.push_back(srcPath);
-	vector <std::string> srcFilesToAdd;
+	// FIXME: fs
+	std::vector <std::string> srcFilesToAdd;
 
 	//so we can just pass through the file paths
 	ofDisableDataPath();
@@ -343,7 +375,8 @@ void baseProject::addSrcRecursively(std::string srcPath){
 
 	//if the files being added are inside the OF root folder, make them relative to the folder.
 	bool bMakeRelative = false;
-	if( srcPath.find_first_of(getOFRoot()) == 0 ){
+	// FIXME: srcPath, convert to path
+	if( srcPath.find_first_of(getOFRoot().string()) == 0 ){
 		bMakeRelative = true;
 	}
 
@@ -381,7 +414,7 @@ void baseProject::addSrcRecursively(std::string srcPath){
 			if( !ofFilePath::isAbsolute(absPath) ){
 				absPath = ofFilePath::getAbsolutePath( ofFilePath::join(ofFilePath::getCurrentExeDir(), fileToAdd) );
 			}
-			auto canPath = of::filesystem::canonical(absPath); //resolves the ./ and ../ to be the most minamlist absolute path
+			auto canPath = fs::canonical(absPath); //resolves the ./ and ../ to be the most minamlist absolute path
 
 			//get the file path realtive to the project
 			auto projectPath = ofFilePath::getAbsolutePath( projectDir );
@@ -519,6 +552,7 @@ void baseProject::parseConfigMake(){
 }
 
 void baseProject::recursiveCopyContents(const ofDirectory & srcDir, ofDirectory & destDir){
+	cout << ">>>> recursiveCopyContents" << endl;
 	for(auto & f: srcDir){
 		if(f.isDirectory()){
 			ofDirectory srcSubDir(f.path());

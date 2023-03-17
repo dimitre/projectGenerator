@@ -7,6 +7,8 @@
 #include "ofFileUtils.h"
 #include "pugixml.hpp"
 
+namespace fs = of::filesystem;
+
 class baseProject {
 
 public:
@@ -27,9 +29,9 @@ public:
 	struct Template{
 		ofDirectory dir;
 		std::string name;
-	std::vector<std::string> platforms;
+		std::vector<std::string> platforms;
 		std::string description;
-		std::map<of::filesystem::path, of::filesystem::path> renames;
+		std::map<fs::path, fs::path> renames;
 		bool operator<(const Template & other) const{
 			return dir<other.dir;
 		}
@@ -39,7 +41,7 @@ public:
 
 	virtual ~baseProject(){}
 
-	bool create(const of::filesystem::path & path, std::string templateName="");
+	bool create(const fs::path & path, std::string templateName="");
 	void parseAddons();
 	void parseConfigMake();
 	bool save();
@@ -69,20 +71,19 @@ public:
 	virtual void addAddon(ofAddon & addon);
 	virtual void addSrcRecursively(std::string srcPath);
 
-	std::string getName() { return projectName;}
-//	std::string getPath() { return projectDir; }
-	of::filesystem::path getPath() { return projectDir; }
+	std::string getName() { return projectName; }
+	fs::path getPath() { return projectDir; }
 
 	std::vector<Template> listAvailableTemplates(std::string target);
 	std::unique_ptr<baseProject::Template> parseTemplate(const ofDirectory & templateDir);
-	virtual std::string getPlatformTemplateDir();
+	virtual fs::path getPlatformTemplateDir();
 
 	pugi::xml_document doc;
 	bool bLoaded;
 
-	of::filesystem::path projectDir;
+	fs::path projectDir;
+	fs::path templatePath;
 	std::string projectName;
-	std::string templatePath;
 	std::string target;
 
 protected:

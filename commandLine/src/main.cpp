@@ -1,4 +1,5 @@
-#include "ofMain.h"
+// #include "ofMain.h"
+//#include "ofBaseApp.h"
 #include "optionparser.h"
 #include "defines.h"
 enum  optionIndex { UNKNOWN, HELP, PLUS, RECURSIVE, LISTTEMPLATES, PLATFORMS, ADDONS, OFPATH, VERBOSE, TEMPLATE, DRYRUN, SRCEXTERNAL, VERSION};

@@ -47,7 +47,7 @@ bool isPlatformName(std::string file){
 }
 
 std::unique_ptr<baseProject::Template> baseProject::parseTemplate(const ofDirectory & templateDir){
-	auto name = ofFilePath::getBaseName(templateDir.getOriginalDirectory());
+	auto name = of::filesystem::path(templateDir.getOriginalDirectory()).parent_path().filename();
 	if(templateDir.isDirectory() && !isPlatformName(name)){
 		ofBuffer templateconfig;
 		ofFile templateconfigFile(ofFilePath::join(templateDir.path(), "template.config"));
@@ -136,6 +136,7 @@ bool baseProject::create(const of::filesystem::path & _path, std::string templat
 	if(!ret) return false;
 
 	if(templateName!=""){
+		auto name = ofFilePath::join(getOFRoot(),templatesFolder + templateName);
 		ofDirectory templateDir(ofFilePath::join(getOFRoot(),templatesFolder + templateName));
 		templateDir.setShowHidden(true);
 		auto templateConfig = parseTemplate(templateDir);
@@ -217,7 +218,13 @@ bool baseProject::save(){
 
 			//add the of root path
 			if( str.rfind("# OF_ROOT =", 0) == 0 ){
-				saveConfig << "OF_ROOT = " + getOFRoot() << endl;
+   
+                            auto path = getOFRoot();
+                            if( projectDir.string().rfind(getOFRoot(),0) == 0 ){
+                                path = getOFRelPath(projectDir);
+                            }
+                            
+                            saveConfig << "OF_ROOT = " << path << endl;
 			}
 			// replace this section with our external paths
 			else if( extSrcPaths.size() && str.rfind("# PROJECT_EXTERNAL_SOURCE_PATHS =", 0) == 0 ){

@@ -205,11 +205,11 @@ bool baseProject::create(const fs::path & _path, std::string templateName){
 bool baseProject::save(){
 	ofLog(OF_LOG_NOTICE) << "saving addons.make";
 	ofFile addonsMake(ofFilePath::join(projectDir,"addons.make"), ofFile::WriteOnly);
-	for(int i = 0; i < addons.size(); i++){
-		if(addons[i].isLocalAddon){
-			addonsMake << fs::path(addons[i].addonPath).generic_string() << std::endl;
-		}else{
-			addonsMake << addons[i].name << std::endl;
+	for (auto & a : addons) {
+		if (a.isLocalAddon) {
+			addonsMake << fs::path(a.addonPath).generic_string() << std::endl;
+		} else {
+			addonsMake << a.name << std::endl;
 		}
 	}
 

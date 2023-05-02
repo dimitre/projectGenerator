@@ -186,8 +186,8 @@ bool isFolderNotCurrentPlatform(std::string folderName, std::string platform){
 		};
 	}
 
-	for(int i = 0; i < platforms.size(); i++){
-		if( folderName == platforms[i] && folderName != platform ){
+	for (auto & p : platforms) {
+		if( folderName == p && folderName != platform ){
 			return true;
 		}
 	}

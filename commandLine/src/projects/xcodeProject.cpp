@@ -717,37 +717,76 @@ void xcodeProject::addAddon(ofAddon & addon){
 		addDefine(e);
 	}
 
-	for (auto & f : addon.frameworks) {
-		ofLogVerbose() << "adding addon frameworks: " << f;
-		ofLog() << "adding addon frameworks: " << f;
-		
-		fs::path folder = fs::path {"addons"} / addon.name / "frameworks";
+	cout << "----- 1" << endl;
+//	for (auto & f : addon.frameworks) {
+//		ofLogVerbose() << "adding addon frameworks: " << f;
+//		ofLog() << "adding addon frameworks: " << f;
+//		
+//		fs::path folder = fs::path {"addons"} / addon.name / "frameworks";
+//
+//		size_t found=f.find('/');
+//		if (found==string::npos){
+//			fs::path fwPath = fs::path{ "/System/Library/Frameworks" } / (f + ".framework");
+//			if (target == "ios"){
+//				fwPath =
+//				fs::path{ "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks" } /
+//				(f + ".framework");
+//			}
+//			
+//			if (addon.isLocalAddon) {
+//				folder = addon.addonPath / "frameworks";
+//			}
+//			addFramework( f + ".framework",
+//						 fwPath,
+//						 folder);
+//			
+//		} else {
+//			if (ofIsPathInPath(f, "/System/Library")){
+//				addFramework(fs::path(f).filename().string(),
+//							 f,
+//							 folder);
+//			} else {
+//				addFramework(fs::path(f).filename().string(),
+//							 f,
+//							 addon.filesToFolders[f]);
+//			}
+//		}
+//	}
+//	
+	cout << "----- 2" << endl;
+	for(int i=0;i<(int)addon.frameworks.size(); i++){
+		ofLogVerbose() << "adding addon frameworks: " << addon.frameworks[i];
+		ofLog() << "adding addon frameworks: " << addon.frameworks[i];
 
-		size_t found=f.find('/');
+		size_t found=addon.frameworks[i].find('/');
 		if (found==string::npos){
-			fs::path fwPath = fs::path{ "/System/Library/Frameworks" } / (f + ".framework");
 			if (target == "ios"){
-				fwPath =
-				fs::path{ "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks" } /
-				(f + ".framework");
-			}
-			
-			if (addon.isLocalAddon) {
-				folder = addon.addonPath / "frameworks";
-			}
-			addFramework( f + ".framework",
-						 fwPath,
-						 folder);
-			
-		} else {
-			if (ofIsPathInPath(f, "/System/Library")){
-				addFramework(fs::path(f).filename().string(),
-							 f,
-							 folder);
+				addFramework( addon.frameworks[i] + ".framework", "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/" +
+					addon.frameworks[i] + ".framework",
+					"addons/" + addon.name + "/frameworks");
 			} else {
-				addFramework(fs::path(f).filename().string(),
-							 f,
-							 addon.filesToFolders[f]);
+				string folder = "addons/" + addon.name + "/frameworks";
+				if (addon.isLocalAddon) {
+					// XAXA
+					folder = (addon.addonPath / "frameworks").string();
+				}
+				addFramework( addon.frameworks[i] + ".framework",
+					"/System/Library/Frameworks/" +
+					addon.frameworks[i] + ".framework",
+					folder);
+			}
+		} else {
+			if (ofIsStringInString(addon.frameworks[i], "/System/Library")){
+				vector < string > pathSplit = ofSplitString(addon.frameworks[i], "/");
+				addFramework(pathSplit[pathSplit.size()-1],
+							 addon.frameworks[i],
+							 "addons/" + addon.name + "/frameworks");
+
+			} else {
+				vector < string > pathSplit = ofSplitString(addon.frameworks[i], "/");
+				addFramework(pathSplit[pathSplit.size()-1],
+							 addon.frameworks[i],
+							 addon.filesToFolders[addon.frameworks[i]]);
 			}
 		}
 	}
@@ -821,9 +860,9 @@ bool xcodeProject::saveProjectFile(){
 		}
 	}
 
-//	for (auto & c : commands) {
-//		cout << c << endl;
-//	}
+	for (auto & c : commands) {
+		cout << c << endl;
+	}
 
 	return true;
 }

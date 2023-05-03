@@ -3,6 +3,7 @@
 #include "baseProject.h"
 
 using std::string;
+namespace fs = of::filesystem;
 
 class xcodeProject : public baseProject {
 public:
@@ -25,7 +26,8 @@ public:
 	void addDefine(string define, LibType libType = RELEASE_LIB);
 
 	// macOS specific
-	void addFramework(string name, string path, string folder="");
+//	void addFramework(string name, string path, string folder="");
+	void addFramework(string name, fs::path path, fs::path folder="");
 	void addDylib(string name, string path);
 
 	void addAddon(ofAddon & addon);

@@ -12,8 +12,8 @@
 #include "ofConstants.h"
 #include "LibraryBinary.h"
 #include <unordered_map>
-// #include <map>
 
+namespace fs = of::filesystem;
 // About Metadata
 
 const std::string ADDON_NAME = "ADDON_NAME";
@@ -95,7 +95,7 @@ public:
 
 	ofAddon();
 
-	bool fromFS(of::filesystem::path path, const std::string & platform);
+	bool fromFS(fs::path path, const std::string & platform);
 //	void fromXML(std::string installXmlName);
 	void clear();
 
@@ -119,21 +119,23 @@ public:
 	std::vector < std::string > cppflags; // CXX_FLAGS
 	std::vector < std::string > ldflags;
 	std::vector < std::string > pkgConfigLibs; 	// linux only
+	// FIXME: future, change frameworks to fs::path
+//	std::vector < fs::path > frameworks;		// osx only
 	std::vector < std::string > frameworks;		// osx only
 	std::vector < std::string > data;
 	std::vector < std::string > defines;
 
 	// metadata
 	std::string name;
-	of::filesystem::path addonPath;
+	fs::path addonPath;
 	std::string description;
 	std::string author;
 	std::vector<std::string> tags;
 	std::string url;
 
 
-	of::filesystem::path pathToOF;
-	of::filesystem::path pathToProject;
+	fs::path pathToOF;
+	fs::path pathToProject;
 	bool isLocalAddon; // set to true if the addon path is realtive to the project instead of in OF/addons/
 
 	bool operator <(const ofAddon & addon) const{

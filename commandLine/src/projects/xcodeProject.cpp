@@ -215,6 +215,7 @@ string xcodeProject::getFolderUUID(string folder, bool isFolder) {
 		string lastFolderUUID = projRootUUID;
 
 		if (folders.size()){
+			// for (auto & f : folders) {
 			for (int a=0; a<folders.size(); a++) {
 				 vector <string> joinFolders;
 				 joinFolders.assign(folders.begin(), folders.begin() + (a+1));
@@ -437,8 +438,8 @@ void xcodeProject::addSrc(string srcFile, string folder, SrcType type){
 	commands.emplace_back("Add :objects:"+folderUUID+":children: string " + UUID);
 }
 
-void xcodeProject::addFramework(string name, string path, string folder){
-//	cout << "addFramework " << name << " path = " << path << " folder = " << folder << endl;
+void xcodeProject::addFramework(string name, fs::path path, fs::path folder){
+	cout << "addFramework " << name << " path = " << path << " folder = " << folder << endl;
 	// name = name of the framework
 	// path = the full path (w name) of this framework
 	// folder = the path in the addon (in case we want to add this to the file browser -- we don't do that for system libs);
@@ -455,7 +456,7 @@ void xcodeProject::addFramework(string name, string path, string folder){
 	string UUID = generateUUID( name );
 
 	//commands.emplace_back("Add :objects:"+UUID+":fileEncoding string 4");
-	commands.emplace_back("Add :objects:"+UUID+":path string "+path);
+	commands.emplace_back("Add :objects:"+UUID+":path string " + path.string());
 	commands.emplace_back("Add :objects:"+UUID+":isa string PBXFileReference");
 	commands.emplace_back("Add :objects:"+UUID+":name string "+name);
 	commands.emplace_back("Add :objects:"+UUID+":lastKnownFileType string wrapper.framework");
@@ -478,7 +479,7 @@ void xcodeProject::addFramework(string name, string path, string folder){
 
 	// we add the second to a final build phase for copying the framework into app.   we need to make sure we *don't* do this for system frameworks
 
-	if (folder.size() != 0 && !ofIsStringInString(path, "/System/Library/Frameworks")
+	if (!folder.empty() && !ofIsStringInString(path, "/System/Library/Frameworks")
 		&& target != "ios"){
 
 		string buildUUID2 = generateUUID(name + "-build2");
@@ -496,32 +497,28 @@ void xcodeProject::addFramework(string name, string path, string folder){
 	}
 
 	// now, we get the path for this framework without the name
-
-	string pathWithoutName;
-	vector < string > pathSplit = ofSplitString(path, "/");
-	for (int i = 0; i < pathSplit.size()-1; i++){
-		if (i != 0) pathWithoutName += "/";
-		pathWithoutName += pathSplit[i];
-	}
-
+	fs::path pathWithoutName = path.parent_path();
 	// then, we are going to add this to "FRAMEWORK_SEARCH_PATHS" -- we do this twice, once for debug once for release.
-
 	for (auto & c : buildConfigs) {
 		commands.emplace_back
-		("Add :objects:"+c+":buildSettings:FRAMEWORK_SEARCH_PATHS: string " + pathWithoutName);
+		("Add :objects:"+c+":buildSettings:FRAMEWORK_SEARCH_PATHS: string " + pathWithoutName.string());
 	}
 
 	// finally, this is for making folders based on the frameworks position in the addon. so it can appear in the sidebar / file explorer
 
-	if (folder.size() > 0 && !ofIsStringInString(folder, "/System/Library/Frameworks")){
+	
+	
+	if (!folder.empty() && !ofIsStringInString(folder, "/System/Library/Frameworks")){
 		string folderUUID = getFolderUUID(folder, false);
 	} else {
 		//FIXME: else what?
 	}
 
-	if (target != "ios" && folder.size() != 0){
+	if (target != "ios" && !folder.empty()){
 		// add it to the linking phases...
 		// FIXME: hardcoded UUID
+//											E4B69B590A3A1756003C02F2 /* Frameworks */ = {
+
 		commands.emplace_back("Add :objects:E4B69B590A3A1756003C02F2:files: string "+buildUUID);
 	}
 }
@@ -720,38 +717,37 @@ void xcodeProject::addAddon(ofAddon & addon){
 		addDefine(e);
 	}
 
-	for(int i=0;i<(int)addon.frameworks.size(); i++){
-		ofLogVerbose() << "adding addon frameworks: " << addon.frameworks[i];
+	for (auto & f : addon.frameworks) {
+		ofLogVerbose() << "adding addon frameworks: " << f;
+		ofLog() << "adding addon frameworks: " << f;
+		
+		fs::path folder = fs::path {"addons"} / addon.name / "frameworks";
 
-		size_t found=addon.frameworks[i].find('/');
+		size_t found=f.find('/');
 		if (found==string::npos){
+			fs::path fwPath = fs::path{ "/System/Library/Frameworks" } / (f + ".framework");
 			if (target == "ios"){
-				addFramework( addon.frameworks[i] + ".framework", "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/" +
-					addon.frameworks[i] + ".framework",
-					"addons/" + addon.name + "/frameworks");
-			} else {
-				string folder = "addons/" + addon.name + "/frameworks";
-				if (addon.isLocalAddon) {
-					// XAXA
-					folder = (addon.addonPath / "frameworks").string();
-				}
-				addFramework( addon.frameworks[i] + ".framework",
-					"/System/Library/Frameworks/" +
-					addon.frameworks[i] + ".framework",
-					folder);
+				fwPath =
+				fs::path{ "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks" } /
+				(f + ".framework");
 			}
+			
+			if (addon.isLocalAddon) {
+				folder = addon.addonPath / "frameworks";
+			}
+			addFramework( f + ".framework",
+						 fwPath,
+						 folder);
+			
 		} else {
-			if (ofIsStringInString(addon.frameworks[i], "/System/Library")){
-				vector < string > pathSplit = ofSplitString(addon.frameworks[i], "/");
-				addFramework(pathSplit[pathSplit.size()-1],
-							 addon.frameworks[i],
-							 "addons/" + addon.name + "/frameworks");
-
+			if (ofIsPathInPath(f, "/System/Library")){
+				addFramework(fs::path(f).filename().string(),
+							 f,
+							 folder);
 			} else {
-				vector < string > pathSplit = ofSplitString(addon.frameworks[i], "/");
-				addFramework(pathSplit[pathSplit.size()-1],
-							 addon.frameworks[i],
-							 addon.filesToFolders[addon.frameworks[i]]);
+				addFramework(fs::path(f).filename().string(),
+							 f,
+							 addon.filesToFolders[f]);
 			}
 		}
 	}

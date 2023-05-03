@@ -69,6 +69,8 @@ inline bool isInVector(T item, std::vector<T> & vec){
 std::string colorText(const std::string & s, int color = 32);
 void alert(std::string msg, int color=32);
 
+//bool ofIsPathInPath(const fs::path& haystack, const fs::path& needle);
+bool ofIsPathInPath(const fs::path& basePath, const fs::path& subPath);
 
 
 #endif /* UTILS_H_ */

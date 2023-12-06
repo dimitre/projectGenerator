@@ -509,7 +509,10 @@ int main(int argc, char** argv){
 				}
 				ofLogNotice() << "project path is: " << projectPath;
 				// FIXME: remove
+				cout << endl;
 				cout << "yes " << projectPath << endl;
+				cout << " >>>> " << fs::current_path() << endl;
+				cout << endl;
 				if(templateName != ""){
 					ofLogNotice() << "using additional template " << templateName;
 				}

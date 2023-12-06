@@ -57,7 +57,7 @@ void setOFRoot(const fs::path & path);
 
 string convertStringToWindowsSeparator(string in);
 
-void findandreplace( string& tInput, string tFind, string tReplace );
+void findandreplace(string & tInput, string tFind, string tReplace );
 void findandreplaceInTexfile (const fs::path & fileName, string tFind, string tReplace );
 
 bool doesTagAndAttributeExist(pugi::xml_document & doc, string tag, string attribute, string newValue);

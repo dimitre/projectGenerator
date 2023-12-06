@@ -319,7 +319,7 @@ void addLibraryName(const pugi::xpath_node_set & nodes, string libName) {
 	}
 }
 
-void visualStudioProject::addProps(fs::path propsFile){
+void visualStudioProject::addProps(const fs::path & propsFile){
 //	alert ("visualStudioProject::addProps " + propsFile.string());
 	string path = propsFile.string();
 	fixSlashOrder(path);

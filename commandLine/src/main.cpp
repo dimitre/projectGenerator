@@ -137,7 +137,7 @@ void addPlatforms(const string & value) {
 }
 
 
-bool containsFolder(fs::path path, string folderName) {
+bool containsFolder(const fs::path & path, const string & folderName) {
 	bool contains = false;
 	for (const auto & entry : fs::directory_iterator(path)) {
 		auto f = entry.path();
@@ -150,7 +150,7 @@ bool containsFolder(fs::path path, string folderName) {
 }
 
 
-bool isGoodProjectPath(fs::path path) {
+bool isGoodProjectPath(const fs::path & path) {
 	// TODO: think of a way of detecting make obj folders which creates a structure similar to project
 	// like this assimp3DModelLoaderExample/obj/osx/Release/src
 	return fs::exists(path / "src");
@@ -303,9 +303,7 @@ int main(int argc, char** argv){
 	startTime = 0;
 	nProjectsUpdated = 0;
 	nProjectsCreated = 0;
-	string projectName = "";
-//    projectPath = "";
-//	ofPath = "";
+	string projectName { "" };
 	templateName = "";
 
 	// ------------------------------------------------------ parse args
@@ -510,6 +508,8 @@ int main(int argc, char** argv){
 					ofLogNotice() << "from -o option";
 				}
 				ofLogNotice() << "project path is: " << projectPath;
+				// FIXME: remove
+				cout << "yes " << projectPath << endl;
 				if(templateName != ""){
 					ofLogNotice() << "using additional template " << templateName;
 				}

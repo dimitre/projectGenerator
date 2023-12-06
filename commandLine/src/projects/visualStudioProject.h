@@ -13,7 +13,7 @@ public:
 
 	void addSrc(const fs::path & srcFile, const fs::path & folder, SrcType type=DEFAULT);
 	void addInclude(std::string includeName);
-	void addProps(fs::path propsFile);
+	void addProps(const fs::path & propsFile);
 	void addLibrary(const LibraryBinary & lib);
 	void addCFLAG(std::string cflag, LibType libType = RELEASE_LIB); // C
 	void addCPPFLAG(std::string cppflag, LibType libType = RELEASE_LIB); // C++

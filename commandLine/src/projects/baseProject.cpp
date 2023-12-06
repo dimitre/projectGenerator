@@ -134,6 +134,8 @@ bool baseProject::create(const fs::path & path, string templateName){
 
 	templatePath = getPlatformTemplateDir();
 	projectDir = path;
+	
+	// FIXME: why this is here? there is the global variable almost the same. maybe it is time to remove
 	auto projectPath = fs::canonical(fs::current_path() / path);
 	projectName = projectPath.filename().string();
 
@@ -141,7 +143,7 @@ bool baseProject::create(const fs::path & path, string templateName){
 //	cout << "projectDir " << projectDir << endl;
 //	cout << "projectPath " << projectPath << endl;
 //	cout << "projectName = " << projectName << endl;
-//
+
 	bool bDoesDirExist = false;
 
 	fs::path project { projectDir / "src" };

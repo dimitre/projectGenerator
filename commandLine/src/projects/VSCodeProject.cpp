@@ -45,9 +45,9 @@ struct fileJson {
 		std::ifstream ifs(fileName);
 		try {
 			data = json::parse(ifs);
-		} catch (json::parse_error& ex) {
+		} catch (json::parse_error & ex) {
 			ofLogError(VSCodeProject::LOG_NAME) << "JSON parse error at byte" << ex.byte;
-
+			ofLogError(VSCodeProject::LOG_NAME) << "fileName: " << fileName;
 		}
 	}
 

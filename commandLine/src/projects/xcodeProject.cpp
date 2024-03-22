@@ -767,9 +767,10 @@ string xcodeProject::addFile(const fs::path & path, const fs::path & folder, con
 		addCommand("Add :objects:"+UUID+":path string " + ofPathToString(path));
 		
 		string folderUUID;
+		string name = ofPathToString(path.filename());
+		addCommand("Add :objects:"+UUID+":name string " + name);
+		
 		if (fp.isSrc) {
-			string name = ofPathToString(path.filename());
-			addCommand("Add :objects:"+UUID+":name string " + name);
 		
 //			fs::path base;
 //			fs::path src { path };
@@ -792,11 +793,9 @@ string xcodeProject::addFile(const fs::path & path, const fs::path & folder, con
 //			folderUUID = getFolderUUID(folder, true, base);
 //			alert("isSrc " + ofPathToString(folder) + " : " + ofPathToString(base), 33);
 		} else {
-			folderUUID = getFolderUUID(folder, false);
+//			folderUUID = getFolderUUID(folder, false);
 		}
-		folderUUID = getFolderUUID(folder, false);
-		addCommand("# ---- addFileToFolder UUID " + ofPathToString(folder));
-		addCommand("Add :objects:" + folderUUID + ":children: string " + UUID);
+		
 		
 		
 		string buildUUID { generateUUID(ofPathToString(path) + "-build") };
@@ -808,24 +807,65 @@ string xcodeProject::addFile(const fs::path & path, const fs::path & folder, con
 			fp.addToResources ||
 			fp.frameworksBuildPhase
 			) {
-			addCommand("# ---- addToBuildPhase " + buildUUID);
-			addCommand("Add :objects:"+buildUUID+":isa string PBXBuildFile");
-			addCommand("Add :objects:"+buildUUID+":fileRef string "+UUID);
+			addCommand("# ---- createNewBuildUUID " + buildUUID);
+			addCommand("Add :objects:" + buildUUID + ":isa string PBXBuildFile");
+			addCommand("Add :objects:" + buildUUID + ":fileRef string " + UUID);
 		}
 		
 		if (fp.addToBuildPhase) {
+//			auto buildUUID = createBuildUUID(UUID, "addToBuildPhase");
 			// Not sure if it applies to everything, applies to srcFile.
 			addCommand("# ---- addToBuildPhase");
 			addCommand("Add :objects:"+buildActionMaskUUID+":files: string " + buildUUID);
 		}
 		
+
+
 		if (fp.codeSignOnCopy) {
+			
+//			auto buildUUID = createBuildUUID(UUID, "codeSignOnCopy");
+			debugCommands = true;
 			addCommand("# ---- codeSignOnCopy " + buildUUID);
-			addCommand("Add :objects:"+buildUUID+":settings:ATTRIBUTES array");
-			addCommand("Add :objects:"+buildUUID+":settings:ATTRIBUTES: string CodeSignOnCopy");
+			addCommand("Add :objects:" + buildUUID + ":settings:ATTRIBUTES array");
+			addCommand("Add :objects:" + buildUUID + ":settings:ATTRIBUTES: string CodeSignOnCopy");
+			
+			// UUID hardcoded para PBXCopyFilesBuildPhase
+			// FIXME: hardcoded - this is the same for the next fixme. so maybe a clearer ident can make things better here.
+//			addCommand("Add :objects:E4C2427710CC5ABF004149E2:files: string " + buildUUID);
+
+			debugCommands = false;
+		}
+		
+		
+		if (fp.addToBuildResource) {
+			string mediaAssetsUUID = "9936F60E1BFA4DEE00891288";
+			addCommand("# ---- addToBuildResource");
+			addCommand("Add :objects:"+mediaAssetsUUID+":files: string " + UUID);
+		}
+		
+		if (fp.addToResources) {
+//			auto buildUUID = createBuildUUID(UUID, "addToResources");
+
+			// FIXME: test if it is working on iOS
+			if (resourcesUUID != "") {
+				addCommand("# ---- addToResources (IOS only) ?" + buildUUID);
+				addCommand("Add :objects:"+resourcesUUID+": string " + buildUUID);
+			}
+		}
+		
+		if (fp.frameworksBuildPhase) {
+//			auto buildUUID = createBuildUUID(UUID, "frameworksBuildPhase");
+
+			addCommand("# ---- frameworksBuildPhase " + buildUUID);
+			addCommand("Add :objects:E4B69B590A3A1756003C02F2:files: string " + buildUUID);
+
 		}
 		
 		if (fp.copyFilesBuildPhase) {
+//			debugCommands = true;
+//			auto buildUUID = createBuildUUID(UUID, "copyFilesBuildPhase");
+
+
 			if (path.extension() == ".framework") {
 				// copy to frameworks
 				addCommand("# ---- copyPhase Frameworks " + buildUUID);
@@ -835,29 +875,24 @@ string xcodeProject::addFile(const fs::path & path, const fs::path & folder, con
 				addCommand("# ---- copyPhase Executables " + buildUUID);
 				addCommand("Add :objects:E4A5B60F29BAAAE400C2D356:files: string " + buildUUID);
 			}
-		}
-		
-		if (fp.addToBuildResource) {
-			string mediaAssetsUUID = "9936F60E1BFA4DEE00891288";
-			addCommand("# ---- addToBuildResource");
-			addCommand("Add :objects:"+mediaAssetsUUID+":files: string " + UUID);
+//			debugCommands = false;
 
 		}
 		
-		if (fp.addToResources) {
-			// FIXME: test if it is working on iOS
-			if (resourcesUUID != "") {
-				addCommand("# ---- addToResources (IOS only) ?" + buildUUID);
-				addCommand("Add :objects:"+resourcesUUID+": string " + buildUUID);
-			}
-		}
-		
-		if (fp.frameworksBuildPhase) {
-			addCommand("# ---- frameworksBuildPhase " + buildUUID);
-			addCommand("Add :objects:E4B69B590A3A1756003C02F2:files: string " + buildUUID);
+		folderUUID = getFolderUUID(folder, false);
+		addCommand("# ---- addFileToFolder UUID " + ofPathToString(folder));
+		addCommand("Add :objects:" + folderUUID + ":children: string " + UUID);
 
-		}
-		debugCommands = false;
+		
+//		debugCommands = false;
 	}
 	return UUID;
+}
+
+string xcodeProject::createBuildUUID(const string & UUID, const string & name) {
+	string buildUUID { generateUUID(UUID + "-" + name) };
+	addCommand("# ----  " + name + " UUID = " + UUID +" :: buildUUID = " + buildUUID);
+	addCommand("Add :objects:" + buildUUID + ":isa string PBXBuildFile");
+	addCommand("Add :objects:" + buildUUID + ":fileRef string " + UUID);
+	return buildUUID;
 }

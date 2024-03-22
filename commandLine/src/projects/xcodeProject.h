@@ -86,4 +86,7 @@ public:
 
 	// TODO: Phase out relRoot. totally
 	fs::path relRoot = "../../..";
+	
+	string createBuildUUID(const string & UUID, const string & name);
+
 };

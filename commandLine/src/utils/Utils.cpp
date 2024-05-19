@@ -355,6 +355,10 @@ string convertStringToWindowsSeparator(string in) {
 void fixSlashOrder(string & toFix){
 	std::replace(toFix.begin(), toFix.end(),'/', '\\');
 }
+//
+//void fixSlashOrder(fs::path & toFix){
+//	std::replace(toFix.begin(), toFix.end(),'/', '\\');
+//}
 
 string unsplitString (std::vector < string > strings, string deliminator ){
 	string result;
@@ -517,15 +521,45 @@ fs::path getUserHomeDir() {
 	return fs::path { ofFilePath::getUserHomeDir() };
 }
 
-
 std::string getPGVersion() {
 	return PG_VERSION;
 }
-
 
 bool ofIsPathInPath(const std::filesystem::path & path, const std::filesystem::path & base) {
 //	alert ("ofIsPathInPath " + base.string() + " : " + path.string(), 35);
 	auto rel = std::filesystem::relative(path, base);
 //	cout << (!rel.empty() && rel.native()[0] != '.') << endl;
 	return !rel.empty() && rel.native()[0] != '.';
+}
+
+//bool copyFromTo(const fs::path & src, const fs::path & dst) {
+//	
+//}
+
+
+bool copyFiles(const fs::path & srcFolder, const fs::path & dstFolder, vector <fs::path> files) {
+	ofLog() << "💾 copyFiles " << srcFolder << " : " << dstFolder ;
+	for (auto & f : files) {
+		auto dst { dstFolder / f };
+#if !defined(TARGET_MINGW)
+		// only needed in msys2
+		if (fs::exists(dst)) {
+			try {
+				fs::remove_all(dst);
+			} catch(fs::filesystem_error & e) {
+				
+				ofLogError() << "error removing " << dst << "\n" << e.what();
+				return false;
+			}
+		}
+#endif
+		auto src = srcFolder / f;
+		try {
+			fs::copy(src, dst, fs::copy_options::overwrite_existing | fs::copy_options::recursive);
+		} catch(fs::filesystem_error & e) {
+			ofLogError() << "error copying src:" << src << ", dst:" << dst << "\n" << e.what();
+		   return false;
+	   }
+	}
+	return true;
 }

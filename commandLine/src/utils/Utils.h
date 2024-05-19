@@ -108,6 +108,8 @@ std::string getPGVersion();
 
 bool ofIsPathInPath(const fs::path & path, const fs::path & base);
 
+//bool copyFromTo(const fs::path & src, const fs::path & dst);
+bool copyFiles(const fs::path & srcFolder, const fs::path & dstFolder, vector <fs::path> files);
 
 /*
  Idea: create an object to hold the origin and destination files, with renames where needed

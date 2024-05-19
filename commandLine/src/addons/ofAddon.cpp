@@ -577,6 +577,7 @@ bool ofAddon::fromFS(const fs::path & path, const string & platform){
 	fs::path parentFolder { path.parent_path() };
 
 	for (auto & s : srcFiles) {
+		cout << "sss " << s << endl;
 		fs::path folder;
 		if (isLocalAddon) {
 			fs::path sFS { s };
@@ -586,6 +587,8 @@ bool ofAddon::fromFS(const fs::path & path, const string & platform){
 			s = ofPathToString( sFS );
 			folder = fs::relative(sFS.parent_path(), getOFRoot());
 		}
+		
+		cout << "adding filesToFolders " << s << " : " << folder << endl;
 		filesToFolders[s] = ofPathToString(folder);
 	}
 

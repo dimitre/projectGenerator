@@ -535,6 +535,7 @@ void baseProject::addAddon(ofAddon & addon){
 
 	for (auto & a : addon.srcFiles) {
 		ofLogVerbose() << "adding addon srcFiles: " << a;
+		cout << "addSrc! " << endl;
 		addSrc(a, addon.filesToFolders[a]);
 	}
 

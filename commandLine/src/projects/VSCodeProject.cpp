@@ -73,51 +73,58 @@ fileJson cppProperties;
 std::string VSCodeProject::LOG_NAME = "VSCodeProject";
 
 bool VSCodeProject::createProjectFile(){
+	
 	workspace.fileName = projectDir / (projectName + ".code-workspace");
 	cppProperties.fileName = projectDir / ".vscode/c_cpp_properties.json";
 	
-	
-
-	
-	// Copy all files from template, recursively
-	ofLog() << "will copy .vscode folder";
-	try {
-		fs::remove( projectDir / ".vscode" );
-	}
-	catch(fs::filesystem_error& e) {
-		ofLogError(LOG_NAME) << "error removing file " << (projectDir / ".vscode") << " : " << e.what();
-	}
-
-	try {
-		fs::copy(templatePath / ".vscode", projectDir / ".vscode", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
-	} catch(fs::filesystem_error& e) {
-		ofLogError(LOG_NAME) << "error copying folder " << (templatePath / ".vscode") << " : " << projectDir << "\n" << e.what();
-		return false;
-	}
-
-	for (auto & f : {
+	vector <fs::path> files {
+		".vscode",
 		"Makefile",
 		"config.make",
 		"emptyExample.code-workspace",
 		"template.config",
-	}) {
-		// This is only needed due to a bug in msys2 https://github.com/msys2/MSYS2-packages/issues/1937
-		try {
-			fs::remove( projectDir / f );
-		}
-		catch(fs::filesystem_error& e) {
-			ofLogError(LOG_NAME) << "error removing file " << (projectDir / f) << " : " << e.what();
-		}
-		
-		
-		try {
-			fs::copy(templatePath / f, projectDir / f, fs::copy_options::overwrite_existing);
-		}
-		catch(fs::filesystem_error& e) {
-			ofLogError(LOG_NAME) << "error copying file " << (templatePath / f) << " : " << projectDir << "\n" << e.what();
-			return false;
-		}
-	}
+	};
+	copyFiles(templatePath, projectDir, files);
+	
+	// Copy all files from template, recursively
+//	ofLog() << "will copy .vscode folder";
+//	try {
+//		fs::remove( projectDir / ".vscode" );
+//	}
+//	catch(fs::filesystem_error& e) {
+//		ofLogError(LOG_NAME) << "error removing file " << (projectDir / ".vscode") << " : " << e.what();
+//	}
+//
+//	try {
+//		fs::copy(templatePath / ".vscode", projectDir / ".vscode", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
+//	} catch(fs::filesystem_error& e) {
+//		ofLogError(LOG_NAME) << "error copying folder " << (templatePath / ".vscode") << " : " << projectDir << "\n" << e.what();
+//		return false;
+//	}
+//
+//	for (auto & f : {
+//		"Makefile",
+//		"config.make",
+//		"emptyExample.code-workspace",
+//		"template.config",
+//	}) {
+//		// This is only needed due to a bug in msys2 https://github.com/msys2/MSYS2-packages/issues/1937
+//		try {
+//			fs::remove( projectDir / f );
+//		}
+//		catch(fs::filesystem_error& e) {
+//			ofLogError(LOG_NAME) << "error removing file " << (projectDir / f) << " : " << e.what();
+//		}
+//		
+//		
+//		try {
+//			fs::copy(templatePath / f, projectDir / f, fs::copy_options::overwrite_existing);
+//		}
+//		catch(fs::filesystem_error& e) {
+//			ofLogError(LOG_NAME) << "error copying file " << (templatePath / f) << " : " << projectDir << "\n" << e.what();
+//			return false;
+//		}
+//	}
 //	vector <fs::path> files {
 //		"Makefile",
 //		"config.make",

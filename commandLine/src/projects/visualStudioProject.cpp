@@ -171,6 +171,9 @@ void visualStudioProject::addSrc(const fs::path & srcFile, const fs::path & fold
 	fixSlashOrder(srcFileString);
 	string folderString = folder.string();
 	fixSlashOrder(folderString);
+	if (folderString == "") {
+		folderString = "other";
+	}
 
 
 // FIXME: Convert to FS::path
@@ -190,6 +193,7 @@ void visualStudioProject::addSrc(const fs::path & srcFile, const fs::path & fold
 			pugi::xml_node node = filterXmlDoc.select_node("//ItemGroup[ClInclude]").node();
 			pugi::xml_node nodeAdded = node.append_child("ClInclude");
 			nodeAdded.append_attribute("Include").set_value(srcFileString.c_str());
+//			alert ("add filter folderString: " + srcFileString + " : " + folderString, 35);
 			nodeAdded.append_child("Filter").append_child(pugi::node_pcdata).set_value(folderString.c_str());
 		} else if (ext == ".vert" || ext == ".frag") {
 			// TODO: add to None but there's no None in the original template so this fails
@@ -328,7 +332,7 @@ void addLibraryName(const pugi::xpath_node_set & nodes, string libName) {
 
 void visualStudioProject::addProps(fs::path propsFile){
 //	alert ("visualStudioProject::addProps " + propsFile.string());
-	string path = propsFile.string();
+	auto path = propsFile.string();
 	fixSlashOrder(path);
 	pugi::xpath_node_set items = doc.select_nodes("//ImportGroup");
 	for (int i = 0; i < items.size(); i++) {
@@ -342,7 +346,8 @@ void visualStudioProject::addLibrary(const LibraryBinary & lib) {
 
 	auto libraryName = fs::path { lib.path };
 	auto libFolder = libraryName.parent_path();
-	string libFolderString = libFolder.string();
+	
+	auto libFolderString = libFolder.string();
 	fixSlashOrder(libFolderString);
 	auto libName = libraryName.filename();
 
@@ -503,7 +508,14 @@ void visualStudioProject::addAddon(ofAddon & addon) {
 		ofLogVerbose() << "adding addon srcFiles: " << s;
 
 //		cout << "addSrc s=" << s << " : " << addon.filesToFolders[s] << endl;
-		addSrc(s,addon.filesToFolders[s]);
+//		cout << "will add src " << s << endl;
+//		for (auto & f : addon.filesToFolders) {
+//			cout << "filestofolders " <<  f.first << " : " << f.second << endl;
+//		}
+		
+		cout << "srcFiles " << s << " : " << addon.filesToFolders[s] << endl;
+		
+		addSrc(s, addon.filesToFolders[s]);
 	}
 
 	for (auto & a : addon.csrcFiles) {
@@ -514,14 +526,14 @@ void visualStudioProject::addAddon(ofAddon & addon) {
 
 	for (auto & a : addon.cppsrcFiles) {
 		ofLogVerbose() << "adding addon cpp srcFiles: " << a;
-		addSrc(a, addon.filesToFolders[a],CPP);
+		addSrc(a, addon.filesToFolders[a], CPP);
 	}
 //		if(addon.filesToFolders[addon.cppsrcFiles[i]]=="") addon.filesToFolders[addon.cppsrcFiles[i]]="other";
 //		addSrc(addon.cppsrcFiles[i],addon.filesToFolders[addon.cppsrcFiles[i]],C);
 
 	for (auto & a : addon.objcsrcFiles) {
 		ofLogVerbose() << "adding addon objc srcFiles: " << a;
-		addSrc(a, addon.filesToFolders[a],OBJC);
+		addSrc(a, addon.filesToFolders[a], OBJC);
 	}
 //		if(addon.filesToFolders[addon.objcsrcFiles[i]]=="") addon.filesToFolders[addon.objcsrcFiles[i]]="other";
 //		addSrc(addon.objcsrcFiles[i],addon.filesToFolders[addon.objcsrcFiles[i]],C);

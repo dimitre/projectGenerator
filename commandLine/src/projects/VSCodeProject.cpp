@@ -91,7 +91,7 @@ bool VSCodeProject::createProjectFile(){
 	try {
 		fs::copy(templatePath / ".vscode", projectDir / ".vscode", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
 	} catch(fs::filesystem_error& e) {
-		ofLogError(LOG_NAME) << "error copying folder " << (templatePath / ".vscode") << " : " << projectDir << " : " << e.what();
+		ofLogError(LOG_NAME) << "error copying folder " << (templatePath / ".vscode") << " : " << projectDir << "\n" << e.what();
 		return false;
 	}
 
@@ -101,11 +101,20 @@ bool VSCodeProject::createProjectFile(){
 		"emptyExample.code-workspace",
 		"template.config",
 	}) {
+		// This is only needed due to a bug in msys2 https://github.com/msys2/MSYS2-packages/issues/1937
+		try {
+			fs::remove( projectDir / f );
+		}
+		catch(fs::filesystem_error& e) {
+			ofLogError(LOG_NAME) << "error removing file " << (projectDir / f) << " : " << e.what();
+		}
+		
+		
 		try {
 			fs::copy(templatePath / f, projectDir / f, fs::copy_options::overwrite_existing);
 		}
 		catch(fs::filesystem_error& e) {
-			ofLogError(LOG_NAME) << "error copying folder " << (templatePath / f) << " : " << projectDir << " : " << e.what();
+			ofLogError(LOG_NAME) << "error copying file " << (templatePath / f) << " : " << projectDir << "\n" << e.what();
 			return false;
 		}
 	}

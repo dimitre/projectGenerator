@@ -346,7 +346,6 @@ void visualStudioProject::addLibrary(const LibraryBinary & lib) {
 
 	auto libraryName = fs::path { lib.path };
 	auto libFolder = libraryName.parent_path();
-	
 	auto libFolderString = libFolder.string();
 	fixSlashOrder(libFolderString);
 	auto libName = libraryName.filename();
@@ -506,15 +505,7 @@ void visualStudioProject::addAddon(ofAddon & addon) {
 
 	for (auto & s : addon.srcFiles) {
 		ofLogVerbose() << "adding addon srcFiles: " << s;
-
-//		cout << "addSrc s=" << s << " : " << addon.filesToFolders[s] << endl;
-//		cout << "will add src " << s << endl;
-//		for (auto & f : addon.filesToFolders) {
-//			cout << "filestofolders " <<  f.first << " : " << f.second << endl;
-//		}
-		
-		cout << "srcFiles " << s << " : " << addon.filesToFolders[s] << endl;
-		
+		// cout << "srcFiles " << s << " : " << addon.filesToFolders[s] << endl;
 		addSrc(s, addon.filesToFolders[s]);
 	}
 

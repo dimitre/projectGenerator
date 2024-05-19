@@ -355,10 +355,6 @@ string convertStringToWindowsSeparator(string in) {
 void fixSlashOrder(string & toFix){
 	std::replace(toFix.begin(), toFix.end(),'/', '\\');
 }
-//
-//void fixSlashOrder(fs::path & toFix){
-//	std::replace(toFix.begin(), toFix.end(),'/', '\\');
-//}
 
 string unsplitString (std::vector < string > strings, string deliminator ){
 	string result;
@@ -532,13 +528,8 @@ bool ofIsPathInPath(const std::filesystem::path & path, const std::filesystem::p
 	return !rel.empty() && rel.native()[0] != '.';
 }
 
-//bool copyFromTo(const fs::path & src, const fs::path & dst) {
-//	
-//}
-
-
 bool copyFiles(const fs::path & srcFolder, const fs::path & dstFolder, vector <fs::path> files) {
-	ofLog() << "💾 copyFiles " << srcFolder << " : " << dstFolder ;
+//	ofLog() << "💾 copyFiles " << srcFolder << " : " << dstFolder ;
 	for (auto & f : files) {
 		auto dst { dstFolder / f };
 #if !defined(TARGET_MINGW)

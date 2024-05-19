@@ -9,17 +9,17 @@ bool visualStudioProject::createProjectFile(){
 
 	ensureDllDirectoriesExist();
 
-	solution	= projectDir / (projectName + ".sln");
+	solution = projectDir / (projectName + ".sln");
 	fs::path project 	{ projectDir / (projectName + ".vcxproj") };
 	fs::path user 		{ projectDir / (projectName + ".vcxproj.user") };
 	fs::path filters	{ projectDir / (projectName + ".vcxproj.filters") };
 
-	fs::copy(templatePath / "emptyExample.vcxproj", 		project, fs::copy_options::overwrite_existing);
-	fs::copy(templatePath / "emptyExample.vcxproj.user", 	user, fs::copy_options::overwrite_existing);
-	fs::copy(templatePath / "emptyExample.sln", 			solution, fs::copy_options::overwrite_existing);
-	fs::copy(templatePath / "emptyExample.vcxproj.filters", filters, fs::copy_options::overwrite_existing);
+	fs::copy(templatePath / "emptyExample.vcxproj", 		project, 	fs::copy_options::overwrite_existing);
+	fs::copy(templatePath / "emptyExample.vcxproj.user", 	user, 		fs::copy_options::overwrite_existing);
+	fs::copy(templatePath / "emptyExample.sln", 			solution, 	fs::copy_options::overwrite_existing);
+	fs::copy(templatePath / "emptyExample.vcxproj.filters", filters, 	fs::copy_options::overwrite_existing);
 
-	fs::copy(templatePath / "icon.rc", projectDir / "icon.rc", fs::copy_options::overwrite_existing);
+	fs::copy(templatePath / "icon.rc", projectDir / "icon.rc", 			fs::copy_options::overwrite_existing);
 
 	pugi::xml_parse_result result = filterXmlDoc.load_file(filters.c_str());
 	if (result.status==pugi::status_ok) {

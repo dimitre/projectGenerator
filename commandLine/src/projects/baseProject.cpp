@@ -40,7 +40,7 @@ fs::path baseProject::getPlatformTemplateDir() {
 //		return getOFRoot()
 //	}
 	
-	return getOFRoot() / templatesFolder / folder;
+	return (getOFRoot() / templatesFolder / folder).make_preferred();
 }
 
 

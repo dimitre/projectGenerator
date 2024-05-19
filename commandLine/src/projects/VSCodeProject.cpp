@@ -82,7 +82,9 @@ bool VSCodeProject::createProjectFile(){
 		//fs::copy(templatePath, projectDir, fs::copy_options::overwrite_existing | fs::copy_options::recursive);
 
 		//tmp fix for now - explicit copy of files needed 
+		ofLog() << "will copy .vscode folder";
 		fs::copy(templatePath / ".vscode", projectDir / ".vscode", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
+		ofLog() << "after copy .vscode folder";
 		fs::copy(templatePath / "Makefile", projectDir, fs::copy_options::skip_existing | fs::copy_options::recursive);
 		fs::copy(templatePath / "config.make", projectDir, fs::copy_options::skip_existing | fs::copy_options::recursive);
 		fs::copy(templatePath / "emptyExample.code-workspace", projectDir, fs::copy_options::overwrite_existing | fs::copy_options::recursive);

@@ -75,28 +75,47 @@ std::string VSCodeProject::LOG_NAME = "VSCodeProject";
 bool VSCodeProject::createProjectFile(){
 	workspace.fileName = projectDir / (projectName + ".code-workspace");
 	cppProperties.fileName = projectDir / ".vscode/c_cpp_properties.json";
+	
+	
 
+	
 	// Copy all files from template, recursively
+	ofLog() << "will copy .vscode folder";
 	try {
-		//dangerous as its copying src/ and bin/ into existing project files 
-		//fs::copy(templatePath, projectDir, fs::copy_options::overwrite_existing | fs::copy_options::recursive);
-
-		//tmp fix for now - explicit copy of files needed 
-		ofLog() << "will copy .vscode folder";
 		fs::remove( projectDir / ".vscode" );
+	}
+	catch(fs::filesystem_error& e) {
+		ofLogError(LOG_NAME) << "error removing file " << (projectDir / ".vscode") << " : " << e.what();
+	}
 
+	try {
 		fs::copy(templatePath / ".vscode", projectDir / ".vscode", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
-		ofLog() << "after copy .vscode folder";
-		fs::copy(templatePath / "Makefile", projectDir / "Makefile", fs::copy_options::skip_existing | fs::copy_options::recursive);
-		fs::copy(templatePath / "config.make", projectDir / "config.make", fs::copy_options::skip_existing | fs::copy_options::recursive);
-		fs::copy(templatePath / "emptyExample.code-workspace", projectDir / "emptyExample.code-workspace", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
-		fs::copy(templatePath / "template.config", projectDir / "template.config", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
-		
 	} catch(fs::filesystem_error& e) {
-		ofLogError(LOG_NAME) << "error copying folder " << templatePath << " : " << projectDir << " : " << e.what();
+		ofLogError(LOG_NAME) << "error copying folder " << (templatePath / ".vscode") << " : " << projectDir << " : " << e.what();
 		return false;
 	}
 
+	for (auto & f : {
+		"Makefile",
+		"config.make",
+		"emptyExample.code-workspace",
+		"template.config",
+	}) {
+		try {
+			fs::copy(templatePath / f, projectDir / f, fs::copy_options::overwrite_existing);
+		}
+		catch(fs::filesystem_error& e) {
+			ofLogError(LOG_NAME) << "error copying folder " << (templatePath / f) << " : " << projectDir << " : " << e.what();
+			return false;
+		}
+	}
+//	vector <fs::path> files {
+//		"Makefile",
+//		"config.make",
+//		"emptyExample.code-workspace",
+//		"template.config",
+//	};
+	
 
 	auto templateConfig { projectDir / "template.config" };
 	try {

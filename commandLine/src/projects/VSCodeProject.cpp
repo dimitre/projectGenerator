@@ -87,10 +87,10 @@ bool VSCodeProject::createProjectFile(){
 
 		fs::copy(templatePath / ".vscode", projectDir / ".vscode", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
 		ofLog() << "after copy .vscode folder";
-		fs::copy(templatePath / "Makefile", projectDir, fs::copy_options::skip_existing | fs::copy_options::recursive);
-		fs::copy(templatePath / "config.make", projectDir, fs::copy_options::skip_existing | fs::copy_options::recursive);
-		fs::copy(templatePath / "emptyExample.code-workspace", projectDir, fs::copy_options::overwrite_existing | fs::copy_options::recursive);
-		fs::copy(templatePath / "template.config", projectDir, fs::copy_options::overwrite_existing | fs::copy_options::recursive);
+		fs::copy(templatePath / "Makefile", projectDir / "Makefile", fs::copy_options::skip_existing | fs::copy_options::recursive);
+		fs::copy(templatePath / "config.make", projectDir / "config.make", fs::copy_options::skip_existing | fs::copy_options::recursive);
+		fs::copy(templatePath / "emptyExample.code-workspace", projectDir / "emptyExample.code-workspace", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
+		fs::copy(templatePath / "template.config", projectDir / "template.config", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
 		
 	} catch(fs::filesystem_error& e) {
 		ofLogError(LOG_NAME) << "error copying folder " << templatePath << " : " << projectDir << " : " << e.what();

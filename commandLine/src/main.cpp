@@ -3,10 +3,84 @@
 
 #include "optionparser.h"
 #include "defines.h"
-#include "ofUtils.h"
+//#include "ofUtils.h"
 #include "Utils.h"
 #include <string>
 #include <set>
+
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+
+
+std::string exec(const char* cmd) {
+	std::array<char, 128> buffer;
+	std::string result;
+
+	auto pipe = popen(cmd, "r"); // get rid of shared_ptr
+
+	if (!pipe) throw std::runtime_error("popen() failed!");
+
+	while (!feof(pipe)) {
+		if (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
+			result += buffer.data();
+	}
+
+	auto rc = pclose(pipe);
+
+	if (rc == EXIT_SUCCESS) { // == 0
+
+	} else if (rc == EXIT_FAILURE) {  // EXIT_FAILURE is not used by all programs, maybe needs some adaptation.
+
+	}
+	// trim last line break
+	result.pop_back();
+	return result;
+}
+
+
+// ios, android aren't needed. you don't run PG there.
+std::string getPlatformString() {
+#ifdef __linux__
+	string arch = exec("uname -m");
+	if (
+		arch == "armv6l" ||
+		arch == "armv7l" ||
+		arch == "aarch64" ||
+		) {
+			return "linux" + arch;
+		}
+	else {
+		return "linux64";
+	}
+#elif defined(__WIN32__)
+	#if defined(__MINGW32__) || defined(__MINGW64__)
+		return "msys2";
+	#else
+		return "vs";
+	#endif
+#elif defined(__APPLE_CC__)
+	return "osx";
+#else
+	return {};
+#endif
+}
+
+
+
+std::vector<std::string> split(const std::string& target, char c) {
+	std::string temp;
+	std::stringstream stringstream { target };
+	std::vector<std::string> result;
+
+	while (std::getline(stringstream, temp, c)) {
+		result.push_back(temp);
+	}
+
+	return result;
+}
+
 
 enum optionIndex { UNKNOWN, HELP, PLUS, RECURSIVE, LISTTEMPLATES, PLATFORMS, ADDONS, OFPATH, VERBOSE, TEMPLATE, DRYRUN, SRCEXTERNAL, VERSION };
 
@@ -124,7 +198,8 @@ bool printTemplates() {
 
 void addPlatforms(const string & value) {
 	targets.clear();
-	vector < string > platforms = ofSplitString(value, ",", true, true);
+//	vector < string > platforms = ofSplitString(value, ",", true, true);
+	vector < string > platforms = split(value, ',');
 
 	for (auto & p : platforms) {
 		if (p == "allplatforms") {
@@ -290,6 +365,10 @@ void printHelp(){
 
 int main(int argc, char** argv){
 	ofLog() << "PG v." + getPGVersion();
+	
+	cout << "getPlatformString() " << getPlatformString() << endl;
+//	exit(0);
+	
 	bAddonsPassedIn = false;
 	bDryRun = false;
 	busingEnvVar = false;
@@ -300,7 +379,8 @@ int main(int argc, char** argv){
 	bHelpRequested = false;
 	bListTemplates = false;
 	// FIXME! problem.
-	targets.emplace_back(platformsToString[ofGetTargetPlatform()]);
+	targets.emplace_back(getPlatformString());
+//	targets.emplace_back(platformsToString[ofGetTargetPlatform()]);
 	startTime = 0;
 	nProjectsUpdated = 0;
 	nProjectsCreated = 0;
@@ -372,7 +452,8 @@ int main(int argc, char** argv){
 		bAddonsPassedIn = true; // could be empty
 		if (options[ADDONS].arg != NULL){
 			string addonsString(options[ADDONS].arg);
-			addons = ofSplitString(addonsString, ",", true, true);
+//			addons = ofSplitString(addonsString, ",", true, true);
+			addons = split(addonsString, ',');
 		}
 	}
 
@@ -380,7 +461,8 @@ int main(int argc, char** argv){
 		if (options[SRCEXTERNAL].arg != NULL){
 			string srcString(options[SRCEXTERNAL].arg);
 			// TODO: TEST
-			for (auto & s : ofSplitString(srcString, ",", true, true)) {
+//			for (auto & s : ofSplitString(srcString, ",", true, true)) {
+			for (auto & s : split(srcString, ',')) {
 				s = ofFilePath::removeTrailingSlash(s);
 				srcPaths.emplace_back(s);
 				//alert ("additional src folder : " + s);
@@ -403,8 +485,10 @@ int main(int argc, char** argv){
 
 	nProjectsUpdated = 0;
 	nProjectsCreated = 0;
-	of::priv::initutils();
-	startTime = ofGetElapsedTimef();
+	
+	// FIXME
+//	of::priv::initutils();
+//	startTime = ofGetElapsedTimef();
 	consoleSpace();
 
 	// try to get the OF_PATH as an environt variable
@@ -547,11 +631,12 @@ int main(int argc, char** argv){
 	}
 
 	consoleSpace();
-	float elapsedTime = ofGetElapsedTimef() - startTime;
 	if (nProjectsCreated > 0) std::cout << nProjectsCreated << " project created ";
 	if (nProjectsUpdated == 1) std::cout << nProjectsUpdated << " project updated ";
 	if (nProjectsUpdated > 1) std::cout << nProjectsUpdated << " projects updated ";
-	ofLogNotice() << "in " << elapsedTime << " seconds" << std::endl;
+	// FIXME
+//	float elapsedTime = ofGetElapsedTimef() - startTime;
+//	ofLogNotice() << "in " << elapsedTime << " seconds" << std::endl;
 	consoleSpace();
 
 	return EXIT_OK;

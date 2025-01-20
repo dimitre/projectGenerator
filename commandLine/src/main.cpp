@@ -686,7 +686,10 @@ int main(int argc, char ** argv) {
 				ofLogNotice() << "from -o option";
 			}
 
-
+			
+//			for (auto & t : targets) {
+//				alert (t, 35);
+//			}
 			for (auto & t : targets) {
 				if(std::find(platformsOptions.begin(), platformsOptions.end(), t) != platformsOptions.end()) {
 //					alert ("target platform found " + t, 33);
